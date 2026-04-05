@@ -14,31 +14,36 @@ import familyGuide from '../assets/blog/family-guide.jpg';
 
 const blogImages = [weddingTips, naturalLight, familyGuide];
 
-// FIXED: correct slugs matching actual files in /public/blog/
-// post-1.html, post-2.html, post-3.html all exist with dashes
-const REAL_SLUGS = ['post-1', 'post-2', 'post-3'];
-
 const POSTS_PER_PAGE = 6;
 
 export const Blog: React.FC = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  // FIXED: Only real posts — no fake generated content
-  const allPosts = t.blog.posts.map((post, index) => ({
-    ...post,
-    id: index + 1,
-    image: blogImages[index],
-    slug: REAL_SLUGS[index],
-    tags: index === 0
-      ? ['photography', 'wedding']
-      : index === 1
-      ? ['tutorial', 'lighting']
-      : ['family', 'preparation'],
-  }));
+  const allPosts = [
+    ...t.blog.posts.map((post, index) => ({
+      ...post,
+      id: index + 1,
+      image: blogImages[index],
+      slug: `post-${index + 1}`,
+      tags: index === 0 ? ['photography', 'wedding'] : index === 1 ? ['tutorial', 'lighting'] : ['family', 'preparation'],
+      content: `Full content for ${post.title}...`
+    })),
+    ...Array.from({ length: 97 }, (_, i) => ({
+      id: i + 4,
+      title: `Post ${i + 4}`,
+      excerpt: `This is an excerpt for blog post ${i + 4}. It provides a brief overview of photography techniques and tips that will help you improve your skills.`,
+      date: `${Math.floor(Math.random() * 28) + 1} ${['January', 'February', 'March', 'April', 'May', 'June'][Math.floor(Math.random() * 6)]} 2024`,
+      category: ['Wedding', 'Tutorial', 'Family'][i % 3],
+      image: blogImages[i % 3],
+      slug: `post-${i + 4}`,
+      tags: ['photography', 'tips'],
+      content: `Full content for Post ${i + 4}...`
+    }))
+  ];
 
-  const filteredPosts = selectedCategory
+  const filteredPosts = selectedCategory 
     ? allPosts.filter(post => post.category === selectedCategory)
     : allPosts;
 
@@ -56,22 +61,6 @@ export const Blog: React.FC = () => {
   const handleCategoryFilter = (category: string | null) => {
     setSelectedCategory(category);
     setCurrentPage(1);
-  };
-
-  // FIXED: smart pagination - show max 5 page buttons with ellipsis
-  const getPaginationPages = () => {
-    if (totalPages <= 5) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    const pages: (number | '...')[] = [];
-    if (currentPage <= 3) {
-      pages.push(1, 2, 3, 4, '...', totalPages);
-    } else if (currentPage >= totalPages - 2) {
-      pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-    } else {
-      pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
-    }
-    return pages;
   };
 
   return (
@@ -112,7 +101,7 @@ export const Blog: React.FC = () => {
               </span>
 
               <Button
-                variant={selectedCategory === null ? 'default' : 'outline'}
+                variant={selectedCategory === null ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleCategoryFilter(null)}
                 className="text-xs"
@@ -123,7 +112,7 @@ export const Blog: React.FC = () => {
               {categories.map((category) => (
                 <Button
                   key={category}
-                  variant={selectedCategory === category ? 'default' : 'outline'}
+                  variant={selectedCategory === category ? "default" : "outline"}
                   size="sm"
                   onClick={() => handleCategoryFilter(category)}
                   className="text-xs"
@@ -139,75 +128,66 @@ export const Blog: React.FC = () => {
         {/* Blog Posts Grid */}
         <section className="py-16">
           <div className="container mx-auto px-4 lg:px-8">
-            {currentPosts.length === 0 ? (
-              <div className="text-center py-16">
-                <p className="text-muted-foreground text-lg">No posts found.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {currentPosts.map((post) => (
-                  <Card
-                    key={post.id}
-                    className="group overflow-hidden shadow-soft hover:shadow-medium transition-all duration-500 border-0 bg-card"
-                  >
-                    <div className="aspect-[16/10] overflow-hidden">
-                      <img
-                        src={post.image}
-                        alt={post.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        loading="lazy"
-                        width={400}
-                        height={250}
-                      />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {currentPosts.map((post) => (
+                <Card
+                  key={post.id}
+                  className="group overflow-hidden shadow-soft hover:shadow-medium transition-all duration-500 border-0 bg-card"
+                >
+                  <div className="aspect-[16/10] overflow-hidden">
+                    <img
+                      src={post.image}
+                      alt={post.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  </div>
+
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
+                      <span className="px-3 py-1 bg-accent rounded-full font-medium">
+                        {post.category}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        <span>{post.date}</span>
+                      </div>
                     </div>
 
-                    <CardContent className="p-6">
-                      <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
-                        <span className="px-3 py-1 bg-accent rounded-full font-medium">
-                          {post.category}
+                    <h2 className="text-xl font-elegant font-semibold text-primary mb-3 line-clamp-2 group-hover:text-charcoal transition-colors duration-300">
+                      {post.title}
+                    </h2>
+
+                    <p className="text-muted-foreground mb-4 line-clamp-3">
+                      {post.excerpt}
+                    </p>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {post.tags.map((tag) => (
+                        <span 
+                          key={tag}
+                          className="text-xs px-2 py-1 bg-secondary text-secondary-foreground rounded"
+                        >
+                          {tag}
                         </span>
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          <span>{post.date}</span>
-                        </div>
-                      </div>
+                      ))}
+                    </div>
 
-                      <h2 className="text-xl font-elegant font-semibold text-primary mb-3 line-clamp-2 group-hover:text-charcoal transition-colors duration-300">
-                        {post.title}
-                      </h2>
+                    <a
+                      href={`/blog/${post.slug}.html`}
+                      className="inline-flex items-center text-primary hover:text-charcoal font-medium group/btn transition-colors duration-300"
+                    >
+                      {t.blog.readMore}
+                      <ArrowRight className="w-4 h-4 ml-1 transition-transform duration-300 group-hover/btn:translate-x-1" />
+                    </a>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-                      <p className="text-muted-foreground mb-4 line-clamp-3">
-                        {post.excerpt}
-                      </p>
-
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {post.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="text-xs px-2 py-1 bg-secondary text-secondary-foreground rounded"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-
-                      {/* FIXED: lang param passed to blog posts */}
-                      <a
-                        href={`/blog/${post.slug}.html?lang=${language}`}
-                        className="inline-flex items-center text-primary hover:text-charcoal font-medium group/btn transition-colors duration-300"
-                      >
-                        {t.blog.readMore}
-                        <ArrowRight className="w-4 h-4 ml-1 transition-transform duration-300 group-hover/btn:translate-x-1" />
-                      </a>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            {/* FIXED: smart pagination */}
+            {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-12 flex-wrap">
+              <div className="flex items-center justify-center gap-4 mt-12">
                 <Button
                   variant="outline"
                   size="sm"
@@ -219,22 +199,18 @@ export const Blog: React.FC = () => {
                   {t.blog.previous || 'Previous'}
                 </Button>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                  {getPaginationPages().map((page, idx) =>
-                    page === '...' ? (
-                      <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">…</span>
-                    ) : (
-                      <Button
-                        key={page}
-                        variant={currentPage === page ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handlePageChange(page as number)}
-                        className="w-10 h-10 p-0"
-                      >
-                        {page}
-                      </Button>
-                    )
-                  )}
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(page)}
+                      className="w-10 h-10 p-0"
+                    >
+                      {page}
+                    </Button>
+                  ))}
                 </div>
 
                 <Button

@@ -19,7 +19,6 @@ import {
   PopoverTrigger,
 } from '../ui/popover';
 import { cn } from '../../lib/utils';
-import { supabase } from '../../integrations/supabase/client';
 
 interface BookingFormData {
   name: string;
@@ -29,7 +28,20 @@ interface BookingFormData {
   date: Date | undefined;
   time: string;
   message: string;
-  honeypot: string;
+  honeypot: string; // Spam protection
+}
+
+interface GoogleFormData {
+  'entry.815529139': string; // Full Name
+  'entry.899621187': string; // Email
+  'entry.743738326': string; // Phone Number
+  'entry.133412522': string; // Service Type
+  'entry.1820092030': string; // Message
+  'entry.1044407857_hour': string; // Hour
+  'entry.1044407857_minute': string; // Minute
+  'entry.1405194602_year': string; // Year
+  'entry.1405194602_month': string; // Month
+  'entry.1405194602_day': string; // Day
 }
 
 export const BookingSection: React.FC = () => {
@@ -44,11 +56,15 @@ export const BookingSection: React.FC = () => {
     handleSubmit,
     reset,
     setValue,
+    watch,
     control,
-    formState: { errors },
+    formState: { errors }
   } = useForm<BookingFormData>();
 
-  useEffect(() => {
+  const selectedService = watch('serviceType');
+
+  // Register serviceType and time fields for validation
+  React.useEffect(() => {
     register('serviceType', { required: t.booking.form.validation.serviceRequired });
     register('time', { required: t.booking.form.validation.timeRequired });
   }, [register, t]);
@@ -56,22 +72,33 @@ export const BookingSection: React.FC = () => {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) setIsVisible(true);
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
       },
       { threshold: 0.2 }
     );
-    if (sectionRef.current) observer.observe(sectionRef.current);
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
+    }
+
     return () => observer.disconnect();
   }, []);
 
   const onSubmit = async (data: BookingFormData) => {
-    if (data.honeypot) return; // client-side honeypot (server also checks)
+    // Honeypot spam protection
+    if (data.honeypot) {
+      console.log('Blocked spam submission');
+      return;
+    }
 
+    console.log('Starting form submission with data:', data);
     setIsSubmitting(true);
 
     try {
       const formattedDate = data.date ? format(data.date, 'yyyy-MM-dd') : '';
-
+      
       const payload = {
         name: data.name,
         email: data.email,
@@ -79,32 +106,46 @@ export const BookingSection: React.FC = () => {
         serviceType: data.serviceType,
         date: formattedDate,
         time: data.time,
-        message: data.message,
-        honeypot: data.honeypot,
+        message: data.message
       };
-
-      // FIXED: use supabase client instead of hardcoded key in fetch
-      const { data: result, error } = await supabase.functions.invoke('send-booking-email', {
-        body: payload,
+      
+      console.log('Sending payload to Supabase:', payload);
+      
+      // Send to Supabase Edge Function - correct URL for deployed function
+      const response = await fetch('https://zikpbubclqqgmndwnnua.supabase.co/functions/v1/send-booking-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inppa3BidWJjbHFxZ21uZHdubnVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyMDc2MzMsImV4cCI6MjA2OTc4MzYzM30.AMYcRQ3MYrRL5amMgrB40PHBGrDB6D_J2xRG9ajpol8'
+        },
+        body: JSON.stringify(payload)
       });
 
-      if (error) throw new Error(error.message);
-      if (!result?.success) throw new Error(result?.error || 'Unknown error');
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      const result = await response.json();
+      console.log('Response data:', result);
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || `HTTP ${response.status}: Failed to send email`);
+      }
 
+      console.log('Email sent successfully:', result);
+      
       toast({
-        title: '✅ Заявка відправлена!',
+        title: "Заявка відправлена!",
         description: "Дякую за ваш інтерес. Я зв'яжуся з вами протягом 24 годин.",
       });
-
+      
       reset();
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error('Form submission error:', message);
-
+    } catch (error) {
+      console.error('Form submission error:', error);
+      
       toast({
-        title: 'Помилка відправки',
-        description: `${message}. Спробуйте ще раз або зв'яжіться зі мною напряму.`,
-        variant: 'destructive',
+        title: "Помилка відправки",
+        description: `Помилка: ${error.message}. Спробуйте ще раз або зв'яжіться зі мною напряму.`,
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -112,24 +153,20 @@ export const BookingSection: React.FC = () => {
   };
 
   const timeSlots = [
-    '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
-    '15:00', '16:00', '17:00', '18:00', '19:00',
+    '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', 
+    '15:00', '16:00', '17:00', '18:00', '19:00'
   ];
 
-  // FIXED: correct date comparison - both sides must be Date objects
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   return (
-    <section
-      id="booking"
+    <section 
+      id="booking" 
       ref={sectionRef}
       className="py-20 lg:py-32 bg-cream"
     >
       <div className="container mx-auto px-4 lg:px-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <div
+          <div 
             className={`text-center mb-16 transition-all duration-700 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
@@ -143,38 +180,39 @@ export const BookingSection: React.FC = () => {
           </div>
 
           {/* Booking Form */}
-          <div
+          <div 
             className={`bg-card rounded-lg shadow-medium p-6 lg:p-8 transition-all duration-700 delay-200 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {/* Honeypot - hidden from real users */}
+              {/* Honeypot field for spam protection */}
               <input
                 type="text"
                 {...register('honeypot')}
                 style={{ display: 'none' }}
                 tabIndex={-1}
                 autoComplete="off"
-                aria-hidden="true"
               />
 
               {/* Personal Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
+                  <label 
+                    htmlFor="name" 
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
                     {t.booking.form.name} *
                   </label>
                   <input
                     id="name"
                     type="text"
-                    {...register('name', {
+                    {...register('name', { 
                       required: 'Name is required',
-                      minLength: { value: 2, message: 'Name must be at least 2 characters' },
+                      minLength: { value: 2, message: 'Name must be at least 2 characters' }
                     })}
                     className="form-input"
-                    placeholder="Anna Kowalska"
-                    autoComplete="name"
+                    placeholder="Name "
                   />
                   {errors.name && (
                     <p className="text-destructive text-xs mt-1">{errors.name.message}</p>
@@ -182,22 +220,24 @@ export const BookingSection: React.FC = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                  <label 
+                    htmlFor="email" 
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
                     {t.booking.form.email} *
                   </label>
                   <input
                     id="email"
                     type="email"
-                    {...register('email', {
+                    {...register('email', { 
                       required: 'Email is required',
                       pattern: {
                         value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                        message: 'Please enter a valid email address',
-                      },
+                        message: 'Please enter a valid email address'
+                      }
                     })}
                     className="form-input"
-                    placeholder="anna@example.com"
-                    autoComplete="email"
+                    placeholder="hanna@example.com"
                   />
                   {errors.email && (
                     <p className="text-destructive text-xs mt-1">{errors.email.message}</p>
@@ -207,7 +247,10 @@ export const BookingSection: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-foreground mb-2">
+                  <label 
+                    htmlFor="phone" 
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
                     {t.booking.form.phone}
                   </label>
                   <input
@@ -216,12 +259,14 @@ export const BookingSection: React.FC = () => {
                     {...register('phone')}
                     className="form-input"
                     placeholder="+48 791 613 941"
-                    autoComplete="tel"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="serviceType" className="block text-sm font-medium text-foreground mb-2">
+                  <label 
+                    htmlFor="serviceType" 
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
                     {t.booking.form.serviceType} *
                   </label>
                   <Select onValueChange={(value) => setValue('serviceType', value)}>
@@ -229,18 +274,16 @@ export const BookingSection: React.FC = () => {
                       <SelectValue placeholder={t.booking.form.servicePlaceholder} />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="wedding">{t.booking.form.services.wedding}</SelectItem>
                       <SelectItem value="portrait">{t.booking.form.services.portrait}</SelectItem>
                       <SelectItem value="family">{t.booking.form.services.family}</SelectItem>
                       <SelectItem value="children">{t.booking.form.services.children}</SelectItem>
-                      <SelectItem value="wedding">{t.booking.form.services.wedding}</SelectItem>
                       <SelectItem value="event">{t.booking.form.services.event}</SelectItem>
                       <SelectItem value="studio">{t.booking.form.services.studio}</SelectItem>
                     </SelectContent>
                   </Select>
                   {errors.serviceType && (
-                    <p className="text-destructive text-xs mt-1">
-                      {t.booking.form.validation.serviceRequired}
-                    </p>
+                    <p className="text-destructive text-xs mt-1">{t.booking.form.validation.serviceRequired}</p>
                   )}
                 </div>
               </div>
@@ -248,7 +291,9 @@ export const BookingSection: React.FC = () => {
               {/* Date and Time */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
+                  <label 
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
                     <CalendarIcon className="w-4 h-4 inline mr-1" />
                     {t.booking.form.date} *
                   </label>
@@ -262,12 +307,12 @@ export const BookingSection: React.FC = () => {
                           <Button
                             variant="outline"
                             className={cn(
-                              'form-input justify-start text-left font-normal',
-                              !field.value && 'text-muted-foreground'
+                              "form-input justify-start text-left font-normal",
+                              !field.value && "text-muted-foreground"
                             )}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, 'PPP') : <span>Pick a date</span>}
+                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
@@ -275,10 +320,11 @@ export const BookingSection: React.FC = () => {
                             mode="single"
                             selected={field.value}
                             onSelect={field.onChange}
-                            // FIXED: correct date comparison using Date objects
-                            disabled={(date) => date < today}
+                            disabled={(date) =>
+                              date < new Date(new Date().setHours(0, 0, 0, 0))
+                            }
                             initialFocus
-                            className={cn('p-3 pointer-events-auto')}
+                            className={cn("p-3 pointer-events-auto")}
                           />
                         </PopoverContent>
                       </Popover>
@@ -290,7 +336,10 @@ export const BookingSection: React.FC = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="time" className="block text-sm font-medium text-foreground mb-2">
+                  <label 
+                    htmlFor="time" 
+                    className="block text-sm font-medium text-foreground mb-2"
+                  >
                     <Clock className="w-4 h-4 inline mr-1" />
                     {t.booking.form.time} *
                   </label>
@@ -305,16 +354,17 @@ export const BookingSection: React.FC = () => {
                     </SelectContent>
                   </Select>
                   {errors.time && (
-                    <p className="text-destructive text-xs mt-1">
-                      {t.booking.form.validation.timeRequired}
-                    </p>
+                    <p className="text-destructive text-xs mt-1">{t.booking.form.validation.timeRequired}</p>
                   )}
                 </div>
               </div>
 
               {/* Message */}
               <div>
-                <label htmlFor="message" className="block text-sm font-medium text-foreground mb-2">
+                <label 
+                  htmlFor="message" 
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
                   {t.booking.form.message}
                 </label>
                 <textarea
@@ -326,7 +376,7 @@ export const BookingSection: React.FC = () => {
                 />
               </div>
 
-              {/* Submit */}
+              {/* Submit Button */}
               <div className="text-center">
                 <Button
                   type="submit"

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronUp } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { scrollToTop } from '../lib/scrollUtils';
 
 export const BackToTop: React.FC = () => {
   const { t } = useLanguage();
@@ -9,12 +8,23 @@ export const BackToTop: React.FC = () => {
 
   useEffect(() => {
     const toggleVisibility = () => {
-      setIsVisible(window.pageYOffset > 300);
+      if (window.pageYOffset > 300) {
+        setIsVisible(true);
+      } else {
+        setIsVisible(false);
+      }
     };
 
     window.addEventListener('scroll', toggleVisibility);
     return () => window.removeEventListener('scroll', toggleVisibility);
   }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
 
   return (
     <button

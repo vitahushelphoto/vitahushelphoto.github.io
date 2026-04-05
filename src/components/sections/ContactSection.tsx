@@ -30,81 +30,63 @@ export const ContactSection: React.FC = () => {
     {
       icon: Phone,
       label: `📞 ${t.contact.phone}`,
-      value: '+48 791 613 941',
+      value: "+48 791 613 941",
       action: () => window.open('tel:+48791613941'),
-      ariaLabel: 'Call Vita Hushel',
+      ariaLabel: "Call Vita Hushel"
     },
     {
       icon: Mail,
       label: `✉️ ${t.contact.email}`,
-      value: 'vitahushelphoto@gmail.com',
-      action: () => window.open('mailto:vitahushelphoto@gmail.com'),
-      ariaLabel: 'Send email to Vita Hushel',
+      value: "vitahushelphoto@gmail.com",
+      action: () => window.open('mailto:vitahushel@gmail.com'),
+      ariaLabel: "Send email to Vita Hushel"
     },
     {
       icon: MessageCircle,
       label: `💬 ${t.contact.social.whatsapp}`,
-      value: 'WhatsApp',
+      value: "WhatsApp",
       action: () => window.open('https://wa.me/48791613941', '_blank'),
-      ariaLabel: 'WhatsApp',
+      ariaLabel: "WhatsApp"
     },
     {
       icon: Send,
       label: `💬 ${t.contact.social.telegram}`,
-      value: 'Telegram',
+      value: "Telegram",
       action: () => window.open('https://t.me/vitahushelphoto', '_blank'),
-      ariaLabel: 'Telegram',
+      ariaLabel: "Telegram"
     },
     {
       icon: MessageCircle,
-      label: '💬 Viber',
-      value: '+48 791 613 941',
-      action: () => window.open('viber://chat?number=%2B48791613941', '_blank'),
-      ariaLabel: 'Contact via Viber',
+      label: "💬 Viber",
+      value: "+48 791 613 941",
+      action: () => window.open('viber://chat?number=%2B+48791613941', '_blank'),
+      ariaLabel: "Contact via Viber"
     },
     {
-      // FIXED: consistent Instagram handle vitahushel_photo
       icon: Instagram,
       label: `📱 ${t.contact.social.instagram}`,
-      value: '@vitahushel_photo',
+      value: "@vitahushel_photo",
       action: () => window.open('https://instagram.com/vitahushel_photo', '_blank'),
-      ariaLabel: 'Instagram @vitahushel_photo',
+      ariaLabel: "Instagram"
     },
     {
       icon: Facebook,
-      label: '📱 Facebook',
-      value: 'Vita Hushel',
+      label: "📱 Facebook",
+      value: "Vita Hushel",
       action: () => window.open('https://facebook.com/vitahushel', '_blank'),
-      ariaLabel: 'Facebook',
-    },
+      ariaLabel: "Facebook"
+    }
   ];
 
-  // Translated labels for working hours section
-  const workingHoursLabel = {
-    en: 'Working hours',
-    uk: 'Графік роботи',
-    pl: 'Godziny pracy',
-  };
-  const monFriLabel = { en: 'Mon–Fri:', uk: 'Пн–Пт:', pl: 'Pon–Pt:' };
-  const satSunLabel = { en: 'Sat–Sun:', uk: 'Сб–Нд:', pl: 'Sob–Nd:' };
-  const appointmentLabel = {
-    en: 'by appointment',
-    uk: 'за попереднім записом',
-    pl: 'po wcześniejszym umówieniu',
-  };
-  const locationLabel = { en: 'Location', uk: 'Локація', pl: 'Lokalizacja' };
-
-  const lang = language as 'en' | 'uk' | 'pl';
-
   return (
-    <section
-      id="contact"
+    <section 
+      id="contact" 
       ref={sectionRef}
       className="py-20 lg:py-32 bg-cream"
     >
       <div className="container mx-auto px-4 lg:px-8">
         {/* Header */}
-        <div
+        <div 
           className={`text-center mb-16 transition-all duration-700 ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
@@ -119,7 +101,7 @@ export const ContactSection: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
           {/* Contact Information */}
-          <div
+          <div 
             className={`transition-all duration-700 delay-200 ${
               isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'
             }`}
@@ -131,9 +113,7 @@ export const ContactSection: React.FC = () => {
                   <MapPin className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-foreground mb-2">
-                    📍 {locationLabel[lang]}
-                  </h3>
+                  <h3 className="font-medium text-foreground mb-2">📍 {language === 'uk' ? 'Локація' : language === 'pl' ? 'Lokalizacja' : 'Location'}</h3>
                   <p className="text-muted-foreground leading-relaxed">
                     {t.contact.address}
                   </p>
@@ -167,41 +147,65 @@ export const ContactSection: React.FC = () => {
               })}
             </div>
 
-            {/* Working Hours */}
+            {/* Business Hours */}
             <div className="mt-8 p-6 bg-card rounded-lg shadow-soft">
-              <h3 className="font-medium text-foreground mb-4">
-                🕒 {workingHoursLabel[lang]}
-              </h3>
+              <h3 className="font-medium text-foreground mb-4">🕒 {language === 'uk' ? 'Графік роботи' : language === 'pl' ? 'Godziny pracy' : 'Working hours'}</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{monFriLabel[lang]}</span>
+                  <span className="text-muted-foreground">{language === 'uk' ? 'Пн–Пт:' : language === 'pl' ? 'Pon–Pt:' : 'Mon–Fri:'}</span>
                   <span className="text-foreground">10:00–18:00</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">{satSunLabel[lang]}</span>
-                  <span className="text-foreground">{appointmentLabel[lang]}</span>
+                  <span className="text-muted-foreground">{language === 'uk' ? 'Сб–Нд:' : language === 'pl' ? 'Sob–Nd:' : 'Sat–Sun:'}</span>
+                  <span className="text-foreground">{language === 'uk' ? 'за попереднім записом' : language === 'pl' ? 'po wcześniejszym umówieniu' : 'by appointment'}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* FIXED: Real Google Maps embed for Wolsztyn, Poland */}
-          <div
+          {/* Google Map */}
+          <div 
             className={`transition-all duration-700 delay-400 ${
               isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8'
             }`}
           >
             <div className="bg-card rounded-lg shadow-soft overflow-hidden h-[500px]">
+              {/* Placeholder for Google Maps - replace with actual Google Maps embed */}
+              <div className="w-full h-full bg-soft-gray flex items-center justify-center relative">
+                <div className="text-center">
+                  <MapPin className="w-12 h-12 text-primary mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">Location</h3>
+                  <p className="text-muted-foreground text-sm max-w-xs">
+                    Interactive map will be embedded here using Google Maps API
+                  </p>
+                  <Button
+                    onClick={() => window.open('https://maps.google.com/?q=Wolsztyn,+64-200,+Poland', '_blank')}
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                    aria-label="Open location in Google Maps"
+                  >
+                    View on Google Maps
+                  </Button>
+                </div>
+                
+                {/* Decorative elements */}
+                <div className="absolute top-4 left-4 w-16 h-16 bg-primary/10 rounded-full"></div>
+                <div className="absolute bottom-4 right-4 w-12 h-12 bg-warm-beige/50 rounded-full"></div>
+              </div>
+              
+              {/* Replace above div with actual Google Maps iframe when ready:
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d39370.123!2d16.0966!3d52.1006!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47045b3b3b3b3b3b%3A0x0!2sWolsztyn%2C+64-200!5e0!3m2!1suk!2spl!4v1"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3022.1234567890123!2d-73.98765432109876!3d40.75432109876543!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNDDCsDQ1JzE1LjYiTiA3M8KwNTknMTUuNiJX!5e0!3m2!1sen!2sus!4v1234567890123!5m2!1sen!2sus"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
                 allowFullScreen
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title={`${t.name} - ${locationLabel[lang]}`}
+                title="Vita Hushel Photography Location"
               />
+              */}
             </div>
           </div>
         </div>

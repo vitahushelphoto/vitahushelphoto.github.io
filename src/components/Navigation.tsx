@@ -4,7 +4,6 @@ import { Menu, X } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LanguageSelector } from './LanguageSelector';
 import { Button } from './ui/button';
-import { scrollToSection } from '../lib/scrollUtils';
 
 export const Navigation: React.FC = () => {
   const { t } = useLanguage();
@@ -12,26 +11,17 @@ export const Navigation: React.FC = () => {
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
+  
+  // Check if we're on a blog page
   const isBlogPage = location.pathname === '/blog';
-  const isBookingPage = location.pathname === '/booking';
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // Handle redirect-based navigation from GitHub Pages SPA redirect
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const redirectPath = searchParams.get('/');
-    if (redirectPath) {
-      const cleanUrl = window.location.pathname + '/' + redirectPath.replace(/~and~/g, '&');
-      window.history.replaceState(null, '', cleanUrl);
-    }
   }, []);
 
   const navItems = [
@@ -45,33 +35,41 @@ export const Navigation: React.FC = () => {
     { key: 'booking', href: '/booking', isRoute: true },
   ];
 
-  const displayedNavItems = (isBlogPage || isBookingPage)
-    ? navItems.filter(item => item.key === 'home' || item.key === 'blog')
+  // Filter nav items for blog page (only show home)
+  const displayedNavItems = isBlogPage 
+    ? navItems.filter(item => item.key === 'home')
     : navItems;
 
   const handleNavClick = (href: string, isRoute: boolean) => {
     setIsMobileMenuOpen(false);
-
-    if (isRoute) return;
-
-    if (location.pathname !== '/') {
-      // Navigate to home, then scroll after page loads
-      navigate('/');
-      // Use a small delay to allow the page to render
-      setTimeout(() => {
-        scrollToSection(href);
-      }, 150);
+    if (isRoute) {
+      // Handle route navigation via Link component
       return;
     }
-
-    scrollToSection(href);
+    
+    // If we're not on the home page, navigate to home first with the anchor
+    if (location.pathname !== '/') {
+      navigate(`/${href}`);
+      return;
+    }
+    
+    // If we're on home page, scroll to the element
+    const element = document.querySelector(href) as HTMLElement;
+    if (element) {
+      const offset = 80; // Account for fixed header height
+      const elementPosition = element.offsetTop - offset;
+      window.scrollTo({
+        top: elementPosition,
+        behavior: 'smooth'
+      });
+    }
   };
 
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-background/95 backdrop-blur-md shadow-soft'
+        isScrolled 
+          ? 'bg-background/95 backdrop-blur-md shadow-soft' 
           : 'bg-transparent'
       }`}
     >
@@ -79,7 +77,7 @@ export const Navigation: React.FC = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <button
+            <button 
               onClick={() => handleNavClick('#hero', false)}
               className="text-xl lg:text-2xl font-elegant font-semibold text-primary hover:text-primary/80 transition-colors"
             >
