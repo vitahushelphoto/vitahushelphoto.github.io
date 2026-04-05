@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: '/',  // Root domain for vitahushelphoto.github.io
+  base: '/',
   server: {
     host: "::",
     port: 8080,
@@ -19,4 +19,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  // FIXED: explicitly expose env variables to the client bundle
+  // (VITE_ prefix is required by Vite for security)
+  envPrefix: 'VITE_',
 }));

@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# FIXED: ensure .env is never committed
+.env
+.env.local
+.env.*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

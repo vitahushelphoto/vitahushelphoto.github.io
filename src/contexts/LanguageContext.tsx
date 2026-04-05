@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { Language, translations, TranslationContent } from '../types/Language';
 
 interface LanguageContextType {
@@ -21,57 +21,42 @@ interface LanguageProviderProps {
   children: React.ReactNode;
 }
 
-export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>(() => {
-    // Get language from localStorage or default to 'en'
-    const savedLang = localStorage.getItem('preferred-language') as Language;
-    return savedLang || 'en';
-  });
+// FIXED: updateDocumentMeta extracted - no risk of triggering re-render
+const updateDocumentMeta = (lang: Language) => {
+  const t = translations[lang];
+  const title = t.meta.title;
+  const description = t.meta.description;
 
-  const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
-    localStorage.setItem('preferred-language', lang);
-    
-    // Update document language
-    document.documentElement.lang = lang;
-    
-    // Update meta tags
-    const title = translations[lang].meta.title;
-    const description = translations[lang].meta.description;
-    
-    document.title = title;
-    
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', description);
-    }
-    
-    // Update Open Graph tags
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) {
-      ogTitle.setAttribute('content', title);
-    }
-    
-    const ogDescription = document.querySelector('meta[property="og:description"]');
-    if (ogDescription) {
-      ogDescription.setAttribute('content', description);
-    }
-    
-    // Update Twitter tags
-    const twitterTitle = document.querySelector('meta[property="twitter:title"]');
-    if (twitterTitle) {
-      twitterTitle.setAttribute('content', title);
-    }
-    
-    const twitterDescription = document.querySelector('meta[property="twitter:description"]');
-    if (twitterDescription) {
-      twitterDescription.setAttribute('content', description);
-    }
+  document.documentElement.lang = lang;
+  document.title = title;
+
+  const setMeta = (selector: string, attr: string, value: string) => {
+    const el = document.querySelector(selector);
+    if (el) el.setAttribute(attr, value);
   };
 
-  useEffect(() => {
-    setLanguage(language);
-  }, [language]);
+  setMeta('meta[name="description"]', 'content', description);
+  setMeta('meta[property="og:title"]', 'content', title);
+  setMeta('meta[property="og:description"]', 'content', description);
+  setMeta('meta[property="twitter:title"]', 'content', title);
+  setMeta('meta[property="twitter:description"]', 'content', description);
+};
+
+export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
+  const [language, setLanguageState] = useState<Language>(() => {
+    const savedLang = localStorage.getItem('preferred-language') as Language;
+    const lang = savedLang || 'en';
+    // Apply meta immediately on first render (no useEffect needed)
+    updateDocumentMeta(lang);
+    return lang;
+  });
+
+  // FIXED: setLanguage is stable via useCallback - no infinite loop
+  const setLanguage = useCallback((lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem('preferred-language', lang);
+    updateDocumentMeta(lang);
+  }, []);
 
   const value: LanguageContextType = {
     language,

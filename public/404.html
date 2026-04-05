@@ -6,7 +6,8 @@
   <script type="text/javascript">
     // GitHub Pages 404 handler for single-page apps
     // https://github.com/rafgraph/spa-github-pages
-    var pathSegmentsToKeep = 1;
+    // Fixed: pathSegmentsToKeep = 0 for root domain deployment
+    var pathSegmentsToKeep = 0;
     var l = window.location;
     l.replace(
       l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +

@@ -2,30 +2,31 @@ import React from 'react';
 import { Instagram, Send, MessageCircle, Phone, Mail } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LanguageSelector } from './LanguageSelector';
+import { scrollToSection } from '../lib/scrollUtils';
+import { Link } from 'react-router-dom';
 
 export const Footer: React.FC = () => {
   const { t } = useLanguage();
 
   const navItems = [
-    { key: 'home', href: '#hero' },
-    { key: 'about', href: '#about' },
-    { key: 'portfolio', href: '#portfolio' },
-    { key: 'prices', href: '#prices' },
-    { key: 'booking', href: '#booking' },
-    { key: 'testimonials', href: '#testimonials' },
-    { key: 'contact', href: '#contact' },
+    { key: 'home', href: '#hero', isRoute: false },
+    { key: 'about', href: '#about', isRoute: false },
+    { key: 'portfolio', href: '#portfolio', isRoute: false },
+    { key: 'prices', href: '#prices', isRoute: false },
+    { key: 'testimonials', href: '#testimonials', isRoute: false },
+    { key: 'contact', href: '#contact', isRoute: false },
   ];
 
   const socialLinks = [
     {
       icon: Instagram,
-      href: 'https://instagram.com/vitahushel',
+      href: 'https://instagram.com/vitahushel_photo',
       label: 'Instagram',
       ariaLabel: t.contact.social.instagram || 'Instagram',
     },
     {
       icon: Send,
-      href: 'https://t.me/vitahushel',
+      href: 'https://t.me/vitahushelphoto',
       label: 'Telegram',
       ariaLabel: t.contact.social.telegram || 'Telegram',
     },
@@ -35,31 +36,7 @@ export const Footer: React.FC = () => {
       label: 'WhatsApp',
       ariaLabel: t.contact.social.whatsapp || 'WhatsApp',
     },
-    {
-      icon: Phone,
-      href: 'tel:+48791613941',
-      label: 'Phone',
-      ariaLabel: 'Call Vita Hushel',
-    },
-    {
-      icon: Mail,
-      href: 'mailto:vitahushel@gmail.com',
-      label: 'Email',
-      ariaLabel: 'Send email to Vita Hushel',
-    },
   ];
-
-  const handleNavClick = (href: string) => {
-    const element = document.querySelector(href) as HTMLElement | null;
-    if (element) {
-      const offset = 80;
-      const elementPosition = element.offsetTop - offset;
-      window.scrollTo({
-        top: elementPosition,
-        behavior: 'smooth',
-      });
-    }
-  };
 
   return (
     <footer className="bg-primary text-primary-foreground py-12 lg:py-16">
@@ -72,12 +49,12 @@ export const Footer: React.FC = () => {
               {t.name}
             </h3>
             <p className="text-primary-foreground/80 leading-relaxed mb-6 max-w-md">
-              Professional photographer specializing in capturing life's most precious moments with artistic elegance. Creating timeless memories that last a lifetime.
+              {t.meta.description}
             </p>
             <div className="flex items-center gap-4">
               <span className="text-sm text-primary-foreground/60">Follow me:</span>
               <div className="flex gap-3">
-                {socialLinks.slice(0, 3).map((social) => {
+                {socialLinks.map((social) => {
                   const Icon = social.icon;
                   return (
                     <a
@@ -103,7 +80,7 @@ export const Footer: React.FC = () => {
               {navItems.map((item) => (
                 <button
                   key={item.key}
-                  onClick={() => handleNavClick(item.href)}
+                  onClick={() => scrollToSection(item.href)}
                   className="block text-primary-foreground/80 hover:text-primary-foreground transition-colors text-sm"
                 >
                   {t.nav[item.key as keyof typeof t.nav]}
@@ -116,14 +93,20 @@ export const Footer: React.FC = () => {
           <div>
             <h4 className="font-medium text-lg mb-4">Contact</h4>
             <div className="space-y-3 text-sm">
-              <div className="flex items-center gap-2">
+              <a
+                href="tel:+48791613941"
+                className="flex items-center gap-2 text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+              >
                 <Phone className="w-4 h-4 text-primary-foreground/60" />
-                <span className="text-primary-foreground/80">{t.contact.phone}</span>
-              </div>
-              <div className="flex items-center gap-2">
+                <span>+48 791 613 941</span>
+              </a>
+              <a
+                href="mailto:vitahushelphoto@gmail.com"
+                className="flex items-center gap-2 text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+              >
                 <Mail className="w-4 h-4 text-primary-foreground/60" />
-                <span className="text-primary-foreground/80">{t.contact.email}</span>
-              </div>
+                <span>vitahushelphoto@gmail.com</span>
+              </a>
               <div className="mt-4">
                 <LanguageSelector />
               </div>
@@ -138,18 +121,13 @@ export const Footer: React.FC = () => {
           </p>
 
           <div className="flex items-center gap-6 text-sm">
-            <a
-              href="/privacy"
+            {/* Privacy Policy link - rendered as internal route */}
+            <Link
+              to="/privacy"
               className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
             >
               Privacy Policy
-            </a>
-            <a
-              href="/terms"
-              className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
-            >
-              Terms of Service
-            </a>
+            </Link>
           </div>
         </div>
       </div>

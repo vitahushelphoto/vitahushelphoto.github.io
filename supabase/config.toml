@@ -1,4 +1,0 @@
-project_id = "zikpbubclqqgmndwnnua"
-
-[functions.send-booking-email]
-verify_jwt = false

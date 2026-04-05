@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Button } from '../ui/button';
 
-// Import portfolio images
 import wedding1 from '../../assets/portfolio/wedding-1.jpg';
 import portrait1 from '../../assets/portfolio/portrait-1.jpg';
 import family1 from '../../assets/portfolio/family-1.jpg';
@@ -17,43 +16,43 @@ const portfolioItems = [
     src: wedding1,
     alt: 'Beautiful wedding photography of bride and groom in elegant outdoor setting',
     category: 'Wedding',
-    caption: 'Sarah & Michael - Garden Wedding'
+    caption: 'Sarah & Michael - Garden Wedding',
   },
   {
     id: 2,
     src: portrait1,
     alt: 'Professional portrait photography of woman in natural lighting',
     category: 'Portrait',
-    caption: 'Professional Headshot Session'
+    caption: 'Professional Headshot Session',
   },
   {
     id: 3,
     src: family1,
     alt: 'Happy family of four during golden hour outdoor photography session',
     category: 'Family',
-    caption: 'The Johnson Family'
+    caption: 'The Johnson Family',
   },
   {
     id: 4,
     src: landscape1,
     alt: 'Stunning landscape photography with mountains and golden hour lighting',
     category: 'Landscape',
-    caption: 'Mountain Serenity'
+    caption: 'Mountain Serenity',
   },
   {
     id: 5,
     src: maternity1,
     alt: 'Elegant maternity photography session with expecting mother',
     category: 'Maternity',
-    caption: 'Expecting Joy'
+    caption: 'Expecting Joy',
   },
   {
     id: 6,
     src: event1,
     alt: 'Professional event photography capturing celebration moments',
     category: 'Event',
-    caption: 'Corporate Celebration'
-  }
+    caption: 'Corporate Celebration',
+  },
 ];
 
 export const PortfolioSection: React.FC = () => {
@@ -84,24 +83,30 @@ export const PortfolioSection: React.FC = () => {
     document.body.style.overflow = 'hidden';
   };
 
-  const closeLightbox = () => {
+  const closeLightbox = useCallback(() => {
     setSelectedImage(null);
     document.body.style.overflow = 'unset';
-  };
+  }, []);
 
-  const nextImage = () => {
-    setSelectedImage(prev => 
+  // FIXED: cleanup body overflow on unmount to prevent memory leak
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  const nextImage = useCallback(() => {
+    setSelectedImage(prev =>
       prev !== null ? (prev + 1) % portfolioItems.length : 0
     );
-  };
+  }, []);
 
-  const prevImage = () => {
-    setSelectedImage(prev => 
+  const prevImage = useCallback(() => {
+    setSelectedImage(prev =>
       prev !== null ? (prev - 1 + portfolioItems.length) % portfolioItems.length : 0
     );
-  };
+  }, []);
 
-  // Handle keyboard navigation
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (selectedImage !== null) {
@@ -121,18 +126,18 @@ export const PortfolioSection: React.FC = () => {
 
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [selectedImage]);
+  }, [selectedImage, closeLightbox, prevImage, nextImage]);
 
   return (
     <>
-      <section 
-        id="portfolio" 
+      <section
+        id="portfolio"
         ref={sectionRef}
         className="py-20 lg:py-32 bg-background"
       >
         <div className="container mx-auto px-4 lg:px-8">
           {/* Header */}
-          <div 
+          <div
             className={`text-center mb-16 transition-all duration-700 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
@@ -154,6 +159,10 @@ export const PortfolioSection: React.FC = () => {
                   isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
                 onClick={() => openLightbox(index)}
+                role="button"
+                tabIndex={0}
+                aria-label={`View ${item.caption}`}
+                onKeyDown={(e) => e.key === 'Enter' && openLightbox(index)}
               >
                 <div className="aspect-[4/5] rounded-lg overflow-hidden">
                   <img
@@ -161,6 +170,8 @@ export const PortfolioSection: React.FC = () => {
                     alt={item.alt}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
+                    width={400}
+                    height={500}
                   />
                   <div className="portfolio-overlay">
                     <div className="text-center text-white">
@@ -177,9 +188,12 @@ export const PortfolioSection: React.FC = () => {
 
       {/* Lightbox Modal */}
       {selectedImage !== null && (
-        <div 
+        <div
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
           onClick={closeLightbox}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image lightbox"
         >
           <div className="relative max-w-4xl max-h-full">
             {/* Close button */}
@@ -198,10 +212,7 @@ export const PortfolioSection: React.FC = () => {
               variant="ghost"
               size="sm"
               className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:text-white hover:bg-white/20"
-              onClick={(e) => {
-                e.stopPropagation();
-                prevImage();
-              }}
+              onClick={(e) => { e.stopPropagation(); prevImage(); }}
               aria-label="Previous image"
             >
               <ChevronLeft className="w-6 h-6" />
@@ -211,10 +222,7 @@ export const PortfolioSection: React.FC = () => {
               variant="ghost"
               size="sm"
               className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 text-white hover:text-white hover:bg-white/20"
-              onClick={(e) => {
-                e.stopPropagation();
-                nextImage();
-              }}
+              onClick={(e) => { e.stopPropagation(); nextImage(); }}
               aria-label="Next image"
             >
               <ChevronRight className="w-6 h-6" />
